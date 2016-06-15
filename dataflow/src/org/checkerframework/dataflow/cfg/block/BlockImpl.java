@@ -45,10 +45,11 @@ public abstract class BlockImpl implements Block {
         return type;
     }
 
+    @Override
     /**
      * @return the list of predecessors of this basic block
      */
-    public Set<BlockImpl> getPredecessors() {
+    public Set<Block> getPredecessors() {
         return Collections.unmodifiableSet(predecessors);
     }
 
