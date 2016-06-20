@@ -89,6 +89,15 @@ public abstract class AbstractAnalysis<V extends AbstractValue<V>, S extends Sto
         this.direction = direction;
     }
 
+    protected abstract void initInitialInputs();
+
+    /**
+     * Propagate the stores in currentInput to the next block in the direction of analysis, according to the
+     * flowRule.
+     */
+    protected abstract void propagateStoresTo(Block nextBlock, Node node, TransferInput<V, S> currentInput,
+            Store.FlowRule flowRule, boolean addToWorklistAgain);
+
     @Override
     /** Is the analysis currently running? */
     public boolean isRunning() {
@@ -211,16 +220,6 @@ public abstract class AbstractAnalysis<V extends AbstractValue<V>, S extends Sto
         return exceptionalExitStore;
     }
 
-
-    /**
-     * Read the {@link Store} for a particular basic block from a map of stores
-     * (or {@code null} if none exists yet).
-     */
-    protected static <S> /*@Nullable*/ S readFromStore(Map<Block, S> stores,
-            Block b) {
-        return stores.get(b);
-    }
-
     /**
      * Call the transfer function for node {@code node}, and set that node as
      * current node first.
@@ -272,15 +271,6 @@ public abstract class AbstractAnalysis<V extends AbstractValue<V>, S extends Sto
         nodeValues = new IdentityHashMap<>();
         finalLocalValues = new HashMap<>();
     }
-
-    protected abstract void initInitialInputs();
-
-    /**
-     * Propagate the stores in currentInput to the next block in the direction of analysis, according to the
-     * flowRule.
-     */
-    protected abstract void propagateStoresTo(Block nextBlock, Node node, TransferInput<V, S> currentInput,
-            Store.FlowRule flowRule, boolean addToWorklistAgain);
 
     /**
      * Updates the value of node {@code node} to the value of the
@@ -376,6 +366,15 @@ public abstract class AbstractAnalysis<V extends AbstractValue<V>, S extends Sto
         public String toString() {
             return "Worklist(" + queue + ")";
         }
+    }
+
+    /**
+     * Read the {@link Store} for a particular basic block from a map of stores
+     * (or {@code null} if none exists yet).
+     */
+    protected static <S> /*@Nullable*/ S readFromStore(Map<Block, S> stores,
+            Block b) {
+        return stores.get(b);
     }
 
     /**

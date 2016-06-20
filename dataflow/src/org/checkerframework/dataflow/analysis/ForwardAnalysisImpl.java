@@ -51,11 +51,11 @@ import com.sun.source.tree.VariableTree;
 public class ForwardAnalysisImpl<V extends AbstractValue<V>, S extends Store<S>, T extends ForwardTransferFunction<V, S>>
     extends AbstractAnalysis<V, S, T> implements ForwardAnalysis<V, S, T> {
 
-    /** The associated processing environment */
-    protected final ProcessingEnvironment env;
-
-    /** Instance of the types utility. */
-    protected final Types types;
+//    /** The associated processing environment */
+//    protected final ProcessingEnvironment env;
+//
+//    /** Instance of the types utility. */
+//    protected final Types types;
 
     /**
      * Then stores before every basic block (assumed to be 'no information' if
@@ -79,28 +79,28 @@ public class ForwardAnalysisImpl<V extends AbstractValue<V>, S extends Store<S>,
      * flow graph. The transfer function is set later using
      * {@code setTransferFunction}.
      */
-    public ForwardAnalysisImpl(ProcessingEnvironment env) {
+    public ForwardAnalysisImpl() {
         super(Direction.FORWARD);
-        this.env = env;
-        types = env.getTypeUtils();
+//        this.env = env;
+//        types = env.getTypeUtils();
     }
 
     /**
      * Construct an object that can perform a org.checkerframework.dataflow analysis over a control
      * flow graph, given a transfer function.
      */
-    public ForwardAnalysisImpl(ProcessingEnvironment env, T transfer) {
-        this(env);
+    public ForwardAnalysisImpl(T transfer) {
+        this();
         this.transferFunction = transfer;
     }
 
-    public Types getTypes() {
-        return types;
-    }
-
-    public ProcessingEnvironment getEnv() {
-        return env;
-    }
+//    public Types getTypes() {
+//        return types;
+//    }
+//
+//    public ProcessingEnvironment getEnv() {
+//        return env;
+//    }
 
     @Override
     /**
