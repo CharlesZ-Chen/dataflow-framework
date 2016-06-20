@@ -1,5 +1,9 @@
 package org.checkerframework.dataflow.analysis;
 
+/*>>>
+import org.checkerframework.checker.nullness.qual.Nullable;
+*/
+
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -11,6 +15,8 @@ import javax.lang.model.element.Element;
 
 import org.checkerframework.dataflow.cfg.ControlFlowGraph;
 import org.checkerframework.dataflow.cfg.block.Block;
+import org.checkerframework.dataflow.cfg.block.ExceptionBlock;
+import org.checkerframework.dataflow.cfg.block.RegularBlock;
 import org.checkerframework.dataflow.cfg.block.SpecialBlock;
 import org.checkerframework.dataflow.cfg.node.AssignmentNode;
 import org.checkerframework.dataflow.cfg.node.LocalVariableNode;
@@ -21,12 +27,15 @@ import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree;
 
+/**
+ * Common code base for BackwardAnalysis and ForwardAnalysis
+ * @author charleszhuochen
+ *
+ * @param <V>
+ * @param <S>
+ * @param <T>
+ */
 public abstract class AbstractAnalysis<V extends AbstractValue<V>, S extends Store<S>, T extends TransferFunction<V, S>> implements Analysis<V, S, T> {
-
-    protected static enum Kind {
-        FORWARD,
-        BACKWARD
-    }
 
     /** Is the analysis currently running? */
     protected boolean isRunning = false;
@@ -34,7 +43,7 @@ public abstract class AbstractAnalysis<V extends AbstractValue<V>, S extends Sto
     /** The control flow graph to perform the analysis on. */
     protected ControlFlowGraph cfg;
 
-    protected final Kind direction;
+    protected final Direction direction;
 
     /** The transfer function for regular nodes. */
     protected T transferFunction;
@@ -76,14 +85,27 @@ public abstract class AbstractAnalysis<V extends AbstractValue<V>, S extends Sto
      */
     protected TransferInput<V, S> currentInput;
 
-    public AbstractAnalysis(Kind direction) {
+    public AbstractAnalysis(Direction direction) {
         this.direction = direction;
     }
 
+    @Override
     /** Is the analysis currently running? */
     public boolean isRunning() {
         return isRunning;
     }
+
+    @Override
+    public Direction getDirection() {
+        return this.direction;
+    }
+
+  @Override
+  public AnalysisResult<V, S> getResult() {
+      assert !isRunning;
+      IdentityHashMap<Tree, Node> treeLookup = cfg.getTreeLookup();
+      return new AnalysisResult<V, S> (nodeValues, inputs, treeLookup, finalLocalValues);
+  }
 
     public void setTransferFunction(T transfer) {
         this.transferFunction = transfer;
@@ -238,7 +260,7 @@ public abstract class AbstractAnalysis<V extends AbstractValue<V>, S extends Sto
     }
 
     /** Initialize the analysis with a new control flow graph. */
-    protected void init(ControlFlowGraph cfg) {
+    protected final void init(ControlFlowGraph cfg) {
         initFields(cfg);
         initInitialInputs();
     }
@@ -317,19 +339,19 @@ public abstract class AbstractAnalysis<V extends AbstractValue<V>, S extends Sto
         /** The backing priority queue. */
         protected PriorityQueue<Block> queue;
 
-        public Worklist(ControlFlowGraph cfg, Kind direction) {
+        public Worklist(ControlFlowGraph cfg, Direction direction) {
             depthFirstOrder = new IdentityHashMap<>();
             int count = 1;
             for (Block b : cfg.getDepthFirstOrderedBlocks()) {
                 depthFirstOrder.put(b, count++);
             }
 
-            if (direction == Kind.FORWARD) {
+            if (direction == Direction.FORWARD) {
                 queue = new PriorityQueue<Block>(11, new ForwardDFOComparator());
-            } else if (direction == Kind.BACKWARD) {
+            } else if (direction == Direction.BACKWARD) {
                 queue = new PriorityQueue<Block>(11, new BackwardDFOComparator());
             } else {
-                assert false;
+                assert false : "Unexpected Direction meet: " + direction.name();
             }
 
         }
@@ -356,4 +378,92 @@ public abstract class AbstractAnalysis<V extends AbstractValue<V>, S extends Sto
         }
     }
 
+    /**
+     * Runs the analysis again within the block of {@code node} and returns the
+     * store at the location of {@code node}. If {@code before} is true, then
+     * the store immediately before the {@link Node} {@code node} is returned.
+     * Otherwise, the store after {@code node} is returned.
+     */
+    public static <A extends AbstractValue<A>, S extends Store<S>> S runAnalysisFor(
+            Node node, boolean before, TransferInput<A, S> transferInput, Direction direction) {
+        assert node != null;
+        switch (direction) {
+        case FORWARD: return runForwardAnalysisFor(node, before, transferInput);
+        case BACKWARD:return runBackwardAnalysisFor(node, before, transferInput);
+        default: assert false; return null;
+        }
+    }
+
+    public static <A extends AbstractValue<A>, S extends Store<S>> S runForwardAnalysisFor(
+            Node node, boolean before, TransferInput<A, S> transferInput) {
+      Block block = node.getBlock();
+      assert transferInput != null && transferInput.analysis.getDirection() == Direction.FORWARD;
+
+      AbstractAnalysis<A, S, ?> analysis = transferInput.analysis;
+      Node oldCurrentNode = analysis.currentNode;
+
+      if (analysis.isRunning()) {
+          return analysis.currentInput.getRegularStore();
+      }
+
+      analysis.isRunning = true;
+      try {
+          switch (block.getType()) {
+          case REGULAR_BLOCK: {
+              RegularBlock rb = (RegularBlock) block;
+
+              // Apply transfer function to contents until we found the node
+              // we
+              // are looking for.
+              TransferInput<A, S> store = transferInput;
+              TransferResult<A, S> transferResult = null;
+              for (Node n : rb.getContents()) {
+                  analysis.currentNode = n;
+                  if (n == node && before) {
+                      return store.getRegularStore();
+                  }
+                  transferResult = analysis.callTransferFunction(n, store);
+                  if (n == node) {
+                      return transferResult.getRegularStore();
+                  }
+                  store = new TransferInput<>(n, analysis, transferResult);
+              }
+              // This point should never be reached. If the block of 'node' is
+              // 'block', then 'node' must be part of the contents of 'block'.
+              assert false;
+              return null;
+          }
+
+          case EXCEPTION_BLOCK: {
+              ExceptionBlock eb = (ExceptionBlock) block;
+
+              // apply transfer function to content
+              assert eb.getNode() == node;
+              if (before) {
+                  return transferInput.getRegularStore();
+              }
+              analysis.currentNode = node;
+              TransferResult<A, S> transferResult = analysis
+                      .callTransferFunction(node, transferInput);
+              return transferResult.getRegularStore();
+          }
+
+          default:
+              // Only regular blocks and exceptional blocks can hold nodes.
+              assert false;
+              break;
+          }
+
+          return null;
+      } finally {
+          analysis.currentNode = oldCurrentNode;
+          analysis.isRunning = false;
+      }
+    }
+
+    public static <A extends AbstractValue<A>, S extends Store<S>> S runBackwardAnalysisFor(
+            Node node, boolean before, TransferInput<A, S> transferInput) {
+        assert transferInput != null && transferInput.analysis.direction == Direction.BACKWARD;
+        return null;
+    }
 }

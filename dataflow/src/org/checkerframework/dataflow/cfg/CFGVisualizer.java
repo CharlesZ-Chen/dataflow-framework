@@ -19,8 +19,8 @@ import java.util.Map;
  * Perform some visualization on a control flow graph.
  * The particular operations depend on the implementation.
  */
-public interface CFGVisualizer<A extends AbstractValue<A>,
-        S extends Store<S>, T extends TransferFunction<A, S>> {
+public interface CFGVisualizer<V extends AbstractValue<V>,
+        S extends Store<S>, T extends TransferFunction<V, S>> {
     /**
      * Initialization method guaranteed to be called once before the
      * first invocation of {@link visualize}.
@@ -51,7 +51,7 @@ public interface CFGVisualizer<A extends AbstractValue<A>,
      * @return possible analysis results, e.g. generated file names.
      */
     /*@Nullable*/ Map<String, Object> visualize(ControlFlowGraph cfg, Block entry,
-            /*@Nullable*/ Analysis<A, S, T> analysis);
+            /*@Nullable*/ Analysis<V, S, T> analysis);
 
     /**
      * Delegate the visualization responsibility
@@ -78,7 +78,7 @@ public interface CFGVisualizer<A extends AbstractValue<A>,
      * @param localVar the local variable
      * @param value the value of the local variable
      */
-    void visualizeStoreLocalVar(FlowExpressions.LocalVariable localVar, A value);
+    void visualizeStoreLocalVar(FlowExpressions.LocalVariable localVar, V value);
 
     /**
      * Called by <code>CFAbstractStore#internalVisualize()</code> to visualize
@@ -86,7 +86,7 @@ public interface CFGVisualizer<A extends AbstractValue<A>,
      *
      * @param value the value of the current object this
      */
-    void visualizeStoreThisVal(A value);
+    void visualizeStoreThisVal(V value);
 
     /**
      * Called by <code>CFAbstractStore#internalVisualize()</code> to visualize
@@ -95,7 +95,7 @@ public interface CFGVisualizer<A extends AbstractValue<A>,
      * @param fieldAccess the field
      * @param value the value of the field
      */
-    void visualizeStoreFieldVals(FlowExpressions.FieldAccess fieldAccess, A value);
+    void visualizeStoreFieldVals(FlowExpressions.FieldAccess fieldAccess, V value);
 
     /**
      * Called by <code>CFAbstractStore#internalVisualize()</code> to visualize
@@ -104,7 +104,7 @@ public interface CFGVisualizer<A extends AbstractValue<A>,
      * @param arrayValue the array
      * @param value the value of the array
      */
-    void visualizeStoreArrayVal(FlowExpressions.ArrayAccess arrayValue, A value);
+    void visualizeStoreArrayVal(FlowExpressions.ArrayAccess arrayValue, V value);
 
     /**
      * Called by <code>CFAbstractStore#internalVisualize()</code> to visualize
@@ -113,7 +113,7 @@ public interface CFGVisualizer<A extends AbstractValue<A>,
      * @param methodCall the pure method call
      * @param value the value of the pure method call
      */
-    void visualizeStoreMethodVals(FlowExpressions.MethodCall methodCall, A value);
+    void visualizeStoreMethodVals(FlowExpressions.MethodCall methodCall, V value);
 
     /**
      * Called by <code>CFAbstractStore#internalVisualize()</code> to visualize
@@ -122,7 +122,7 @@ public interface CFGVisualizer<A extends AbstractValue<A>,
      * @param className the class name
      * @param value the value of the class name
      */
-    void visualizeStoreClassVals(FlowExpressions.ClassName className, A value);
+    void visualizeStoreClassVals(FlowExpressions.ClassName className, V value);
 
     /**
      * Called by <code>CFAbstractStore#internalVisualize()</code> to visualize
@@ -148,7 +148,7 @@ public interface CFGVisualizer<A extends AbstractValue<A>,
      * @param bb the block
      * @param analysis the current analysis
      */
-    void visualizeBlock(Block bb, /*@Nullable*/ Analysis<A, S, T> analysis);
+    void visualizeBlock(Block bb, /*@Nullable*/ Analysis<V, S, T> analysis);
 
     /**
      * Visualize a SpecialBlock.
@@ -163,7 +163,7 @@ public interface CFGVisualizer<A extends AbstractValue<A>,
      * @param bb the block
      * @param analysis the current analysis
      */
-    void visualizeBlockTransferInput(Block bb, Analysis<A, S, T> analysis);
+    void visualizeBlockTransferInput(Block bb, Analysis<V, S, T> analysis);
 
     /**
      * Visualize a Node based on the analysis.
@@ -171,7 +171,7 @@ public interface CFGVisualizer<A extends AbstractValue<A>,
      * @param t the node
      * @param analysis the current analysis
      */
-    void visualizeBlockNode(Node t, /*@Nullable*/ Analysis<A, S, T> analysis);
+    void visualizeBlockNode(Node t, /*@Nullable*/ Analysis<V, S, T> analysis);
 
     /**
      * Shutdown method called once from the shutdown hook of the

@@ -22,7 +22,7 @@ public abstract class BlockImpl implements Block {
     protected BlockType type;
 
     /** The set of predecessors. */
-    protected Set<BlockImpl> predecessors;
+    protected Set<Block> predecessors;
 
     /**
      * @return a fresh identifier

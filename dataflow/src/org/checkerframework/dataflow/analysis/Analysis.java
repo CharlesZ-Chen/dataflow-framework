@@ -18,6 +18,15 @@ import com.sun.source.tree.Tree;
  */
 public interface Analysis<V extends AbstractValue<V>, S extends Store<S>, T extends TransferFunction<V, S>> {
 
+    public static enum Direction {
+        FORWARD,
+        BACKWARD
+    }
+
+    public Direction getDirection();
+
+    public boolean isRunning();
+
     public void performAnalysis(ControlFlowGraph cfg);
 
     public AnalysisResult<V, S> getResult();
@@ -44,5 +53,5 @@ public interface Analysis<V extends AbstractValue<V>, S extends Store<S>, T exte
 
     public S getRegularExitStore();
 
-    public S getExceptionExitStore();
+    public S getExceptionalExitStore();
 }

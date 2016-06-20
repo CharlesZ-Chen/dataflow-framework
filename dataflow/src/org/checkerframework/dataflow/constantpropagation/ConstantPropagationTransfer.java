@@ -2,7 +2,7 @@ package org.checkerframework.dataflow.constantpropagation;
 
 import org.checkerframework.dataflow.analysis.ConditionalTransferResult;
 import org.checkerframework.dataflow.analysis.RegularTransferResult;
-import org.checkerframework.dataflow.analysis.TransferFunction;
+import org.checkerframework.dataflow.analysis.ForwardTransferFunction;
 import org.checkerframework.dataflow.analysis.TransferInput;
 import org.checkerframework.dataflow.analysis.TransferResult;
 import org.checkerframework.dataflow.cfg.UnderlyingAST;
@@ -18,7 +18,7 @@ import java.util.List;
 public class ConstantPropagationTransfer
         extends
         AbstractNodeVisitor<TransferResult<Constant, ConstantPropagationStore>, TransferInput<Constant, ConstantPropagationStore>>
-        implements TransferFunction<Constant, ConstantPropagationStore> {
+        implements ForwardTransferFunction<Constant, ConstantPropagationStore> {
 
     @Override
     public ConstantPropagationStore initialStore(UnderlyingAST underlyingAST,

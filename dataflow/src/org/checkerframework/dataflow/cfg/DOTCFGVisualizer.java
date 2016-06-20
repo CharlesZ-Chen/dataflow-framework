@@ -46,9 +46,9 @@ import com.sun.tools.javac.tree.JCTree;
  * @author Stefan Heule
  *
  */
-public class DOTCFGVisualizer<A extends AbstractValue<A>,
-        S extends Store<S>, T extends TransferFunction<A, S>>
-        implements CFGVisualizer<A, S, T> {
+public class DOTCFGVisualizer<V extends AbstractValue<V>,
+        S extends Store<S>, T extends TransferFunction<V, S>>
+        implements CFGVisualizer<V, S, T> {
 
     protected String outdir;
     protected boolean verbose;
@@ -84,7 +84,7 @@ public class DOTCFGVisualizer<A extends AbstractValue<A>,
      * {@inheritDoc}
      */
     public /*@Nullable*/ Map<String, Object> visualize(ControlFlowGraph cfg, Block entry,
-            /*@Nullable*/ Analysis<A, S, T> analysis) {
+            /*@Nullable*/ Analysis<V, S, T> analysis) {
 
         String dotgraph = generateDotGraph(cfg, entry, analysis);
 
@@ -111,7 +111,7 @@ public class DOTCFGVisualizer<A extends AbstractValue<A>,
      * Generate the dot representation as String.
      */
     protected String generateDotGraph(ControlFlowGraph cfg, Block entry,
-        /*@Nullable*/ Analysis<A, S, T> analysis) {
+        /*@Nullable*/ Analysis<V, S, T> analysis) {
         this.sbDigraph.setLength(0);
         Set<Block> visited = new HashSet<>();
 
@@ -186,7 +186,7 @@ public class DOTCFGVisualizer<A extends AbstractValue<A>,
         return this.sbDigraph.toString();
     }
 
-    protected void generateDotNodes(Set<Block> visited, ControlFlowGraph cfg, Analysis<A, S, T> analysis) {
+    protected void generateDotNodes(Set<Block> visited, ControlFlowGraph cfg, Analysis<V, S, T> analysis) {
         IdentityHashMap<Block, List<Integer>> processOrder = getProcessOrder(cfg);
         this.sbDigraph.append("    node [shape=rectangle];\n\n");
         // definition of all nodes including their labels
@@ -278,8 +278,7 @@ public class DOTCFGVisualizer<A extends AbstractValue<A>,
      */
     @Override
     public void visualizeBlock(Block bb,
-            /*@Nullable*/ Analysis<A, S, T> analysis) {
-
+            /*@Nullable*/ Analysis<V, S, T> analysis) {
         this.sbBlock.setLength(0);
 
         // loop over contents
@@ -346,8 +345,8 @@ public class DOTCFGVisualizer<A extends AbstractValue<A>,
     }
 
     @Override
-    public void visualizeBlockTransferInput(Block bb, Analysis<A, S, T> analysis) {
-        TransferInput<A, S> input = analysis.getInput(bb);
+    public void visualizeBlockTransferInput(Block bb, Analysis<V, S, T> analysis) {
+        TransferInput<V, S> input = analysis.getInput(bb);
         this.sbStore.setLength(0);
 
         // split input representation to two lines
@@ -396,8 +395,8 @@ public class DOTCFGVisualizer<A extends AbstractValue<A>,
     }
 
     @Override
-    public void visualizeBlockNode(Node t, /*@Nullable*/ Analysis<A, S, T> analysis) {
-        A value = analysis.getValue(t);
+    public void visualizeBlockNode(Node t, /*@Nullable*/ Analysis<V, S, T> analysis) {
+        V value = analysis.getValue(t);
         String valueInfo = "";
         if (value != null) {
             valueInfo = "    > " + prepareString(value.toString());
@@ -424,39 +423,39 @@ public class DOTCFGVisualizer<A extends AbstractValue<A>,
     }
 
     @Override
-    public void visualizeStoreThisVal(A value) {
+    public void visualizeStoreThisVal(V value) {
         this.sbStore.append("  this > " + value
                 + "\\n");
     }
 
     @Override
-    public void visualizeStoreLocalVar(FlowExpressions.LocalVariable localVar, A value) {
+    public void visualizeStoreLocalVar(FlowExpressions.LocalVariable localVar, V value) {
         this.sbStore.append("  " + localVar + " > " +
             toStringEscapeDoubleQuotes(value)
             + "\\n");
     }
 
     @Override
-    public void visualizeStoreFieldVals(FlowExpressions.FieldAccess fieldAccess, A value) {
+    public void visualizeStoreFieldVals(FlowExpressions.FieldAccess fieldAccess, V value) {
         this.sbStore.append("  " + fieldAccess + " > " +
             toStringEscapeDoubleQuotes(value)
             + "\\n");
     }
 
     @Override
-    public void visualizeStoreArrayVal(FlowExpressions.ArrayAccess arrayValue, A value) {
+    public void visualizeStoreArrayVal(FlowExpressions.ArrayAccess arrayValue, V value) {
         this.sbStore.append("  " + arrayValue + " > " +
             toStringEscapeDoubleQuotes(value) + "\\n");
     }
 
     @Override
-    public void visualizeStoreMethodVals(FlowExpressions.MethodCall methodCall, A value) {
+    public void visualizeStoreMethodVals(FlowExpressions.MethodCall methodCall, V value) {
         this.sbStore.append("  " + methodCall.toString().replace("\"", "\\\"") + " > " +
                 value + "\\n");
     }
 
     @Override
-    public void visualizeStoreClassVals(FlowExpressions.ClassName className, A value) {
+    public void visualizeStoreClassVals(FlowExpressions.ClassName className, V value) {
         this.sbStore.append("  " + className + " > " + toStringEscapeDoubleQuotes(value) + "\\n");
     }
 
