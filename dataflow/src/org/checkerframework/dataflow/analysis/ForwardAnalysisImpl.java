@@ -81,8 +81,6 @@ public class ForwardAnalysisImpl<V extends AbstractValue<V>, S extends Store<S>,
      */
     public ForwardAnalysisImpl() {
         super(Direction.FORWARD);
-//        this.env = env;
-//        types = env.getTypeUtils();
     }
 
     /**
@@ -93,14 +91,6 @@ public class ForwardAnalysisImpl<V extends AbstractValue<V>, S extends Store<S>,
         this();
         this.transferFunction = transfer;
     }
-
-//    public Types getTypes() {
-//        return types;
-//    }
-//
-//    public ProcessingEnvironment getEnv() {
-//        return env;
-//    }
 
     @Override
     /**
