@@ -6494,7 +6494,7 @@
 											"height": 13,
 											"autoResize": false,
 											"underline": false,
-											"text": "+storeAtEntry: TransferResult<V, S>",
+											"text": "+storeAtEntry: S",
 											"horizontalAlignment": 0,
 											"verticalAlignment": 5
 										}
@@ -11284,7 +11284,7 @@
 							"visibility": "public",
 							"isStatic": false,
 							"isLeaf": false,
-							"type": "TransferResult<V, S>",
+							"type": "S",
 							"isReadOnly": false,
 							"isOrdered": false,
 							"isUnique": false,
