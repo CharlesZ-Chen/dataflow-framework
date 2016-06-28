@@ -396,7 +396,9 @@ public abstract class AbstractAnalysis<V extends AbstractValue<V>, S extends Sto
     public static <A extends AbstractValue<A>, S extends Store<S>> S runForwardAnalysisFor(
             Node node, boolean before, TransferInput<A, S> transferInput) {
       Block block = node.getBlock();
-      assert transferInput != null && transferInput.analysis.getDirection() == Direction.FORWARD;
+      if (transferInput == null || transferInput.analysis.getDirection() != Direction.FORWARD) {
+          assert false;
+      }
 
       AbstractAnalysis<A, S, ?> analysis = transferInput.analysis;
       Node oldCurrentNode = analysis.currentNode;
@@ -460,9 +462,12 @@ public abstract class AbstractAnalysis<V extends AbstractValue<V>, S extends Sto
       }
     }
 
+    // TODO: implement this method
     public static <A extends AbstractValue<A>, S extends Store<S>> S runBackwardAnalysisFor(
             Node node, boolean before, TransferInput<A, S> transferInput) {
-        assert transferInput != null && transferInput.analysis.direction == Direction.BACKWARD;
+        if (transferInput == null || transferInput.analysis.direction != Direction.BACKWARD) {
+            assert false;
+        }
         return null;
     }
 }
