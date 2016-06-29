@@ -135,6 +135,9 @@ public class BackwardAnalysisImpl<V extends AbstractValue<V>, S extends Store<S>
                 break;
             }
         }
+
+        assert isRunning == true;
+        isRunning = false;
     }
 
     /**
