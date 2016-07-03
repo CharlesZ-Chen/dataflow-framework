@@ -157,6 +157,7 @@ public class BackwardAnalysisImpl<V extends AbstractValue<V>, S extends Store<S>
     protected void initFields(ControlFlowGraph cfg) {
         super.initFields(cfg);
         outStores = new IdentityHashMap<>();
+        exceptionStores = new IdentityHashMap<>();
         // storeAtEntry is null before analysis begin
         storeAtEntry = null;
     }
@@ -209,8 +210,10 @@ public class BackwardAnalysisImpl<V extends AbstractValue<V>, S extends Store<S>
 
     protected void addStoreAfter(Block pred, Node node, S s, boolean addBlockToWorklist) {
         if (pred instanceof ExceptionBlock &&(
-                ((ExceptionBlock) pred).getSuccessor() == null ||
-                ((ExceptionBlock) pred).getSuccessor().getId() != node.getBlock().getId())) {
+                ((ExceptionBlock) pred).getSuccessor() == null ||(
+                    node != null &&
+                    ((ExceptionBlock) pred).getSuccessor().getId() != node.getBlock().getId())
+                )) {
             // TODO: implement an equalTo() in Block would be better
             // if the block of current node is not the regular successor block of exception block's predecessor,
             // then it must be the exceptional successor of it's predecessor. Then it's store propagate
