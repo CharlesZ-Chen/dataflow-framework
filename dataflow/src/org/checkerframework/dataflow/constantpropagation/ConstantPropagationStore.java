@@ -12,6 +12,8 @@ import org.checkerframework.dataflow.cfg.node.LocalVariableNode;
 import org.checkerframework.dataflow.cfg.node.Node;
 import org.checkerframework.dataflow.constantpropagation.Constant.Type;
 
+import com.sun.xml.internal.bind.v2.runtime.reflect.opt.Const;
+
 public class ConstantPropagationStore implements
         Store<ConstantPropagationStore> {
 
@@ -159,7 +161,14 @@ public class ConstantPropagationStore implements
 
     @Override
     public void visualize(CFGVisualizer<?, ConstantPropagationStore, ?> viz) {
-        // Do nothing since ConstantPropagationStore doesn't support visualize
+        for (Entry<Node, Constant> entry : contents.entrySet()) {
+            Node node = entry.getKey();
+            Constant constant = entry.getValue();
+            if (!node.isLValue()) {
+                continue;
+            }
+            viz.visualizeStoreKeyVal(node.toString(), constant);
+        }
     }
 
 }
