@@ -7,6 +7,8 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.PriorityQueue;
@@ -403,6 +405,7 @@ public abstract class AbstractAnalysis<V extends AbstractValue<V>, S extends Sto
       AbstractAnalysis<A, S, ?> analysis = transferInput.analysis;
       Node oldCurrentNode = analysis.currentNode;
 
+      // TODO: why if analysis is running, then the Store of passing node is analysis.currentInput.getRegularStore()?
       if (analysis.isRunning()) {
           return analysis.currentInput.getRegularStore();
       }
@@ -443,6 +446,7 @@ public abstract class AbstractAnalysis<V extends AbstractValue<V>, S extends Sto
               if (before) {
                   return transferInput.getRegularStore();
               }
+              // TODO: why we need to set `analysis.currentNode = node` here?
               analysis.currentNode = node;
               TransferResult<A, S> transferResult = analysis
                       .callTransferFunction(node, transferInput);
@@ -462,12 +466,85 @@ public abstract class AbstractAnalysis<V extends AbstractValue<V>, S extends Sto
       }
     }
 
-    // TODO: implement this method
     public static <A extends AbstractValue<A>, S extends Store<S>> S runBackwardAnalysisFor(
             Node node, boolean before, TransferInput<A, S> transferInput) {
+        Block block = node.getBlock();
         if (transferInput == null || transferInput.analysis.direction != Direction.BACKWARD) {
             assert false;
         }
-        return null;
+
+
+        AbstractAnalysis<A, S, ?> analysis = transferInput.analysis;
+        Node oldCurrentNode = analysis.currentNode;
+
+        // TODO: why if analysis is running, then the Store of passing node is analysis.currentInput.getRegularStore()?
+        if (analysis.isRunning()) {
+            return analysis.currentInput.getRegularStore();
+        }
+
+        analysis.isRunning = true;
+        try {
+            switch (block.getType()) {
+            case REGULAR_BLOCK: {
+                RegularBlock rBlock = (RegularBlock) block;
+
+                // Apply transfer function to contents until we found the node
+                // we are looking for.
+                TransferInput<A, S> store = transferInput;
+                TransferResult<A, S> transferResult = null;
+
+                List<Node> nodeList = rBlock.getContents();
+                ListIterator<Node> reverseIter = nodeList.listIterator(nodeList.size());
+
+                while(reverseIter.hasPrevious()) {
+                    Node n = reverseIter.previous();
+                    analysis.currentNode = n;
+                    if (n == node && !before) {
+                        return store.getRegularStore();
+                    }
+                    transferResult = analysis.callTransferFunction(n, store);
+                    if (n == node) {
+                        return transferResult.getRegularStore();
+                    }
+                    store = new TransferInput<>(n, analysis, transferResult);
+                }
+                // This point should never be reached. If the block of 'node' is
+                // 'block', then 'node' must be part of the contents of 'block'.
+                assert false;
+                return null;
+            }
+
+            case EXCEPTION_BLOCK: {
+                ExceptionBlock eBlock = (ExceptionBlock) block;
+                assert eBlock.getNode() == node;
+
+                if (!before) {
+                    return transferInput.getRegularStore();
+                }
+
+                // TODO: why if analysis is running, then the Store of passing node is analysis.currentInput.getRegularStore()?
+                analysis.currentNode = node;
+                TransferResult<A, S> transferResult = analysis
+                        .callTransferFunction(node, transferInput);
+
+                // merge transfer result with the exception store of this exceptional block
+                // TODO: need refactor! This is implementation specific code, it introduces coupling between AbstractAnalysis and BackwardAnalysisImpl
+                // Ideally, AbstractAnalysis should never be aware of any specific sub-classes and should not have code
+                // dependents on a specific sub-class.
+                BackwardAnalysisImpl<A, S, ?> backwardAnalysis = (BackwardAnalysisImpl<A, S, ?>) analysis;
+                S exceptionStore = backwardAnalysis.exceptionStores.get(eBlock);
+                return exceptionStore == null ?
+                        transferResult.getRegularStore() : transferResult.getRegularStore().leastUpperBound(exceptionStore);
+            }
+
+            // Only regular blocks and exceptional blocks can hold nodes.
+            default : assert false;
+            return null;
+            }
+
+        } finally {
+            analysis.currentNode = oldCurrentNode;
+            analysis.isRunning = false;
+        }
     }
 }
