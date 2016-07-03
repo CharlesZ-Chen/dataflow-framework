@@ -165,7 +165,11 @@ public class BackwardAnalysisImpl<V extends AbstractValue<V>, S extends Store<S>
     protected void initInitialInputs() {
         SpecialBlock regularExitBlock = cfg.getRegularExitBlock();
         SpecialBlock exceptionExitBlock = cfg.getExceptionalExitBlock();
-        assert regularExitBlock != null || exceptionExitBlock != null : "regularExitBlock and exceptionExitBlock should never both be null at the same time.";
+
+        // TODO: this is a tricky assertion! reason see the comment below.
+        assert worklist.depthFirstOrder.get(regularExitBlock) != null ||
+                worklist.depthFirstOrder.get(exceptionExitBlock) != null :
+                "regularExitBlock and exceptionExitBlock should never both be null at the same time.";
 
         UnderlyingAST underlyingAST = cfg.getUnderlyingAST();
         List<ReturnNode> returnNodes = cfg.getReturnNodes();
@@ -173,13 +177,20 @@ public class BackwardAnalysisImpl<V extends AbstractValue<V>, S extends Store<S>
         S normalInitialStore = transferFunction.initialNormalExitStore(underlyingAST, returnNodes);
         S exceptionalInitialStore = transferFunction.initialExceptionalExitStore(underlyingAST);
 
-        if (regularExitBlock != null) {
+        // TODO: this is tricky if-condition!
+        // exceptionExitBlock and regularExitBlock will always be non-null account to the implementation
+        // in CFGBuilder#CFGTranslationPhaseTwo#process() will always create these two exit blocks on a CFG no
+        // matter this CFG whether would has these exit blocks according to the underlying AST.
+        // Here the workaround is using the inner protected Map in Worklist to decide whether a given cfg really
+        // has a regularExitBlock and/or an exceptionExitBlockå
+        if (worklist.depthFirstOrder.get(regularExitBlock) != null) {
             worklist.add(regularExitBlock);
             inputs.put(regularExitBlock, new TransferInput<>(null, this, normalInitialStore));
             outStores.put(regularExitBlock, normalInitialStore);
         }
 
-        if (exceptionExitBlock != null) {
+          // TODO: tricky code, same reason as above.
+          if (worklist.depthFirstOrder.get(exceptionExitBlock) != null) {
             worklist.add(exceptionExitBlock);
             inputs.put(exceptionExitBlock, new TransferInput<>(null,this, exceptionalInitialStore));
             outStores.put(exceptionExitBlock, exceptionalInitialStore);
