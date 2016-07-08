@@ -52,6 +52,7 @@ public class DOTCFGVisualizer<V extends AbstractValue<V>,
 
     protected String outdir;
     protected boolean verbose;
+    // TODO: This is checker-framework specific field, should be removed or have a better name
     protected String checkerName;
 
     protected StringBuilder sbDigraph;
@@ -61,7 +62,7 @@ public class DOTCFGVisualizer<V extends AbstractValue<V>,
     /** Mapping from class/method representation to generated dot file. */
     protected Map<String, String> generated;
 
-    public void init(Map<String, Object> args) {
+    public final void init(Map<String, Object> args) {
         this.outdir = (String) args.get("outdir");
         {
             Object verb = args.get("verbose");
@@ -80,16 +81,19 @@ public class DOTCFGVisualizer<V extends AbstractValue<V>,
         this.sbBlock = new StringBuilder();
     }
 
+    public /*@Nullable*/ Map<String, Object> visualize(ControlFlowGraph cfg, Block entry,
+            /*@Nullable*/ Analysis<V, S, T> analysis) {
+        return this.visualize(cfg, entry, analysis, dotOutputFileName(cfg.underlyingAST));
+    }
     /**
      * {@inheritDoc}
      */
     public /*@Nullable*/ Map<String, Object> visualize(ControlFlowGraph cfg, Block entry,
-            /*@Nullable*/ Analysis<V, S, T> analysis) {
+            /*@Nullable*/ Analysis<V, S, T> analysis, String dotfilename) {
 
         String dotgraph = generateDotGraph(cfg, entry, analysis);
 
-        String dotfilename = dotOutputFileName(cfg.underlyingAST);
-        // System.err.println("Output to DOT file: " + dotfilename);
+         System.err.println("Output to DOT file: " + dotfilename);
 
         try {
             FileWriter fstream = new FileWriter(dotfilename);
@@ -186,7 +190,8 @@ public class DOTCFGVisualizer<V extends AbstractValue<V>,
         return this.sbDigraph.toString();
     }
 
-    protected void generateDotNodes(Set<Block> visited, ControlFlowGraph cfg, Analysis<V, S, T> analysis) {
+    protected void generateDotNodes(Set<Block> visited, ControlFlowGraph cfg,
+            /*@Nullable*/ Analysis<V, S, T> analysis) {
         IdentityHashMap<Block, List<Integer>> processOrder = getProcessOrder(cfg);
         this.sbDigraph.append("    node [shape=rectangle];\n\n");
         // definition of all nodes including their labels
@@ -247,8 +252,12 @@ public class DOTCFGVisualizer<V extends AbstractValue<V>,
                 " value: " + ast.toString());
             return null;
         }
-        outfile.append('-');
-        outfile.append(checkerName);
+
+        if (checkerName != null) {
+            outfile.append('-');
+            outfile.append(checkerName);
+        }
+
         outfile.append(".dot");
 
         // make path safe for Windows
@@ -279,6 +288,7 @@ public class DOTCFGVisualizer<V extends AbstractValue<V>,
     @Override
     public void visualizeBlock(Block bb,
             /*@Nullable*/ Analysis<V, S, T> analysis) {
+
         this.sbBlock.setLength(0);
 
         // loop over contents
@@ -346,6 +356,8 @@ public class DOTCFGVisualizer<V extends AbstractValue<V>,
 
     @Override
     public void visualizeBlockTransferInput(Block bb, Analysis<V, S, T> analysis) {
+        assert analysis != null : "analysis should be non-null when visualize transfer input of a block";
+
         TransferInput<V, S> input = analysis.getInput(bb);
         this.sbStore.setLength(0);
 
@@ -396,12 +408,11 @@ public class DOTCFGVisualizer<V extends AbstractValue<V>,
 
     @Override
     public void visualizeBlockNode(Node t, /*@Nullable*/ Analysis<V, S, T> analysis) {
-        V value = analysis.getValue(t);
-        String valueInfo = "";
-        if (value != null) {
-            valueInfo = "    > " + prepareString(value.toString());
+        this.sbBlock.append(prepareString(t.toString()) + "   [ " + prepareNodeType(t) + " ]");
+        V value = null;
+        if (analysis != null && (value = analysis.getValue(t)) != null) {
+            this.sbBlock.append("    > " + prepareString(value.toString()));
         }
-        this.sbBlock.append(prepareString(t.toString()) + "   [ " + prepareNodeType(t) + " ]" + valueInfo);
     }
 
     protected String prepareNodeType(Node t) {
@@ -461,7 +472,7 @@ public class DOTCFGVisualizer<V extends AbstractValue<V>,
 
     @Override
     public void visualizeStoreKeyVal(String keyName, Object value) {
-        this.sbStore.append("  "+keyName+" = "+value+"\\n");
+        this.sbStore.append("  "+prepareString(keyName)+" = "+ prepareString(value.toString()) + "\\n");
     }
 
     protected String escapeDoubleQuotes(final String str) {
@@ -483,7 +494,7 @@ public class DOTCFGVisualizer<V extends AbstractValue<V>,
     }
 
     /**
-     * Write a file <code>methods.txt</code> that contains a mapping from
+     * Write a file {@code methods.txt} that contains a mapping from
      * source code location to generated dot file.
      */
     @Override

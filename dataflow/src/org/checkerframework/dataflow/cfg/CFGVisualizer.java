@@ -19,7 +19,7 @@ import java.util.Map;
  * Perform some visualization on a control flow graph.
  * The particular operations depend on the implementation.
  */
-public interface CFGVisualizer<V extends AbstractValue<V>,
+public interface CFGVisualizer <V extends AbstractValue<V>,
         S extends Store<S>, T extends TransferFunction<V, S>> {
     /**
      * Initialization method guaranteed to be called once before the

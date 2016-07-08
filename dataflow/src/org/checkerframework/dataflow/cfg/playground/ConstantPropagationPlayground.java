@@ -1,7 +1,7 @@
 package org.checkerframework.dataflow.cfg.playground;
 
 import org.checkerframework.dataflow.analysis.ForwardAnalysisImpl;
-import org.checkerframework.dataflow.cfg.JavaSource2CFGDOT;
+import org.checkerframework.dataflow.cfg.CFGVisualizeLauncher;
 import org.checkerframework.dataflow.constantpropagation.Constant;
 import org.checkerframework.dataflow.constantpropagation.ConstantPropagationStore;
 import org.checkerframework.dataflow.constantpropagation.ConstantPropagationTransfer;
@@ -15,8 +15,8 @@ public class ConstantPropagationPlayground {
     public static void main(String[] args) {
 
         /* Configuration: change as appropriate */
-        String inputFile = "cfg-input.java"; // input file name and path
-        String outputDir = "cfg"; // output directory
+        String inputFile = "/Users/charleszhuochen/Desktop/Test.java"; // input file name and path
+        String outputDir = "/Users/charleszhuochen/Desktop/cfg"; // output directory
         String method = "test"; // name of the method to analyze
         String clazz = "Test"; // name of the class to consider
 
@@ -24,8 +24,6 @@ public class ConstantPropagationPlayground {
         ConstantPropagationTransfer transfer = new ConstantPropagationTransfer();
         // TODO: correct processing environment
         ForwardAnalysisImpl<Constant, ConstantPropagationStore, ConstantPropagationTransfer> analysis = new ForwardAnalysisImpl<>(transfer);
-        JavaSource2CFGDOT.generateDOTofCFG(inputFile, outputDir, method,
-                clazz, true, analysis);
+        CFGVisualizeLauncher.generateDOTofCFG(inputFile, outputDir, method, clazz, false, analysis);
     }
-
 }
