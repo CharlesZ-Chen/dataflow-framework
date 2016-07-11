@@ -12,8 +12,6 @@ import org.checkerframework.dataflow.cfg.node.LocalVariableNode;
 import org.checkerframework.dataflow.cfg.node.Node;
 import org.checkerframework.dataflow.constantpropagation.Constant.Type;
 
-import com.sun.xml.internal.bind.v2.runtime.reflect.opt.Const;
-
 public class ConstantPropagationStore implements
         Store<ConstantPropagationStore> {
 
