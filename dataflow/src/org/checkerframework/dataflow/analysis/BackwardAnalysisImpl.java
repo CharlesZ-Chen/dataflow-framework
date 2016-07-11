@@ -76,7 +76,6 @@ public class BackwardAnalysisImpl<V extends AbstractValue<V>, S extends Store<S>
                     currentInput = new TransferInput<>(node, this, transferResult);
                     firstNode = node;
                 }
-
                 //propagate store to predecessors
                 for (Block pred : rBlock.getPredecessors()) {
                     propagateStoresTo(pred, firstNode, currentInput, FlowRule.EACH_TO_EACH, addToWorklistAgain);
@@ -128,6 +127,7 @@ public class BackwardAnalysisImpl<V extends AbstractValue<V>, S extends Store<S>
                         propagateStoresTo(pred, null, getInput(sBlock), FlowRule.EACH_TO_EACH, false);
                     }
                 }
+                break;
             }
 
             default:
