@@ -2,3 +2,6 @@
 dataflow/build
 dataflow/dist
 dataflow/api
+javacutil/build
+javacutil/dist
+javacutil/api
